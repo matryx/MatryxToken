@@ -10,7 +10,7 @@ import './ownership/Ownable.sol';
  * @title TestCrowdsale
  * This is for manual testing of unix epochs
  */
-contract Crowdsale is Ownable, Haltable {
+contract TestCrowdsale is Ownable, Haltable {
   using SafeMath for uint256;
 
   // The token being sold
@@ -20,8 +20,10 @@ contract Crowdsale is Ownable, Haltable {
   uint256 public presaleStartTime;
   uint256 public startTime;
   uint256 public endTime;
+  uint256 public _now;
 
   // address where funds are collected
+  //address public wallet = 0x0;
   address public wallet;
 
   // how many token units a buyer gets per wei
@@ -56,6 +58,9 @@ contract Crowdsale is Ownable, Haltable {
 
   // Total amount to be sold in the presale in ether
   uint256 public presaleCap = 809015 * 10**17;
+
+  // Has this crowdsale been finalized
+  // bool public finalized;
 
   // Do we need to have unique contributor id for each customer
   bool public requireCustomerId;
@@ -92,7 +97,14 @@ contract Crowdsale is Ownable, Haltable {
 
   event Finalized();
 
-  function Crowdsale(uint256 _presaleStartTime, uint256 _startTime, uint256 _endTime, address _wallet) {
+  function TestCrowdsale() {
+    //require(_token != 0x0);
+    // test constructor args manually
+    uint256 _presaleStartTime = 1506399909;
+    uint256 _startTime = 1508991909;
+    uint256 _endTime = 1511673909;
+    address _wallet = 0x01da6F5F5C89F3a83CC6BeBb0eAFC1f1E1c4A303;
+
     require(_startTime >= now);
     require(_presaleStartTime >= now && _presaleStartTime < _startTime);
     require(_endTime >= _startTime);
@@ -105,6 +117,13 @@ contract Crowdsale is Ownable, Haltable {
     endTime = _endTime;
   }
   
+  // test helper to set times
+  function setTime(uint256 _presaleStartTime, uint256 _startTime, uint256 _endTime) {
+    _now = now;
+    presaleStartTime = _presaleStartTime;
+    startTime = _startTime;
+    endTime = _endTime;
+  }
   //creates the token to be sold. 
   //override this method to have crowdsale of a specific mintable token.
   function createTokenContract() internal returns (MatryxToken) {
@@ -177,6 +196,9 @@ contract Crowdsale is Ownable, Haltable {
 
     token.mint(beneficiary, tokens);
 
+    // update the early list so they may purchase smaller amounts
+    //earlyParticipantList[msg.sender] = true;
+
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
@@ -201,10 +223,9 @@ contract Crowdsale is Ownable, Haltable {
   }
 
   /**
-   * @dev Finalization logic. We take the expected sale cap of 188495559
-   * and find the difference from the actual minted tokens.
-   * The remaining balance and 40% of total supply are minted 
-   * to the Matryx team multisig wallet.
+   * @dev Can be overriden to add finalization logic. The overriding function
+   * should call super.finalization() to ensure the chain of finalization is
+   * executed entirely.
    */
   function finalization() internal {
     // calculate token amount to be created

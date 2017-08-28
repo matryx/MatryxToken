@@ -10,6 +10,7 @@ Ether Cap: 161,803 Eth
 ## Requirements
 
 npm/node
+eth testrpc
 truffle
 
 ## Install
@@ -18,20 +19,37 @@ truffle
 
 ## Compile Contracts
 
-```node node_modules/truffle/build/cli.bundled.js compile```
+```truffle compile```
 
 ## Deploy Contracts
 
-```node node_modules/truffle/build/cli.bundled.js migrate```
+Set unix epoch for start and end time
+
+```truffle migrate```
 
 ## Test
 
-```node node_modules/truffle/build/cli.bundled.js test```
+install testrpc
+
+```
+npm install -g ethereumjs-testrpc
+
+```
+
+Run testrpc chain
+
+ex
+```
+testrpc -b 3 --account="0xc7dcd9e96b41cb0f5d319550966fc36e9472f92be7d16af3638e600a48d588,200000000000000000000000" --account="0xb6485e6830a5d9aff97fa9d799c16aa9e387a2eea684c4b7d2c9f656798e2710,150000000000000000000"
+```
+
+set test bool to true in /migrations/2_deploy_contracts.js
+run truffle tests
+
+```truffle test```
 
 ## TODO
 
 - Customer serverside UUID and database?
-- Finalization logic
-- Set up non-kovan testrpc
-- write unit tests
+- upgrade path
 
