@@ -7,27 +7,38 @@ var token
 var presale
 var start
 var end
+var crowdsaleAddy
 
 contract('Presale', function(accounts) {
   // Token Tests
   it("Crowdsale & Token deployed", function() {
     return Crowdsale.deployed().then(function(instance){
+      crowdsaleAddy = instance.address
       inst = instance
       return instance.token()
     }).then(function(address){
-      // assert address exists
-      console.log(address)
       Token.at(address).then(function(instance) {
         token = instance;
         return token.totalSupply.call()
       }).then(function(total) {
-        console.log(total.toNumber())
         // assert totalSupply init to 0
+        assert.equal(total, 0, "totalSupply not initilized correctly")
         return token.name.call().then(function(name){
           // assert vanity variable is set
-          console.log(name)
+          assert.equal(name, "MatryxToken", "vanity variable not set correctly")
         })
       })
+    })
+  })
+  it("Crowdsale has correct owner", function(){
+    return inst.owner.call().then(function(owner){
+      assert.equal(owner, accounts[0])
+    })
+  })
+  it("token has correct owner", function(){
+    return token.owner.call().then(function(owner){
+      // assert token is owned by crowdsale contract
+      assert.equal(owner, crowdsaleAddy)
     })
   })
   it("sets the timestamps", function(){
@@ -36,24 +47,17 @@ contract('Presale', function(accounts) {
     end = new Date().getTime() + 3
 
     return inst.setTime(presale, start, end).then(function(){
-      console.log("timestamps")
-      console.log(presale)
       return inst.presaleStartTime.call()
     }).then(function(time) {
       // assert presale 
-      console.log(time.toNumber())
+      assert.equal(time, presale, "presale time not set correctly")
     })
   })
   // CrowdSale Tests
   it("updates the presale whitelist", function() {
-    return Crowdsale.deployed().then(function(instance) {
-      inst = instance	
-      return instance.updateWhitelist(accounts[1], {from: accounts[0]})
-    }).then(function(tx) {
-      //console.log(ret)
+    return inst.updateWhitelist(accounts[1], {from: accounts[0]}).then(function(tx) {
       return inst.whitelist(accounts[1])
     }).then(function(listed){
-      console.log("whitelist updated")
       assert.isTrue(listed)
     })
   })
@@ -64,19 +68,14 @@ contract('Presale', function(accounts) {
     return inst.sendTransaction({from: accounts[0], value: 20000}).then(function(res) {
       return inst.weiRaised.call().then(function(raised){
         // assert weiRaiser = 0
-        console.log(raised.toNumber())
-        // assert balance returned to purchaser
-        //console.log(web3.eth.getBalance(accounts[0]).toNumber())
-        //console.log(web3.eth.getBalance(accounts[1]).toNumber())
+        assert.equal(raised.toNumber(), 0, "wei raised is incorrect")
         return token.totalSupply.call().then(function(totalSupply){
-          // assert total supply = 20000 * 4164
-          console.log("-totalSupply-")
-          console.log(totalSupply.toNumber())
+          // assert total supply = 0
+          assert.equal(totalSupply.toNumber(), 0, "whitelist presale buy not correct")
           return token.balanceOf(accounts[0])
         }).then(function(purchased) {
-          // assert total = 20000 * 4164
-          console.log("-tokens purchased")
-          console.log(purchased.toNumber())
+          // assert total = 0
+          assert.equal(purchased.toNumber(), 0, "purchaser balance presale buy not correct")
         })
       })
     })
@@ -93,11 +92,7 @@ contract('Presale', function(accounts) {
       return inst.sendTransaction({from: accounts[0], value: 20000}).then(function(res) {
         return inst.weiRaised.call().then(function(raised) {
           // assert weiRaiser = 0
-          console.log('wei raised low value non-whitelist purchase')
-          console.log(raised.toNumber())
-          // assert balance returned to purchaser
-          // console.log(web3.eth.getBalance(accounts[0]).toNumber())
-          // console.log(web3.eth.getBalance(accounts[1]).toNumber())
+          assert.equal(raised.toNumber(), 0, "can't presale buy not correct")
         })
       })
     })
@@ -116,15 +111,13 @@ contract('Presale', function(accounts) {
           return inst.weiRaised.call()
         }).then(function(raised) {
           // assert wei raised is 0
-          console.log('halted wei raised')
-          console.log(raised.toNumber())
+          assert.equal(raised.toNumber(), 0, "halted wei presale purchase did not issue correct amount")
           return inst.unhalt({from: accounts[0]})
         }).then(function(res) {
           return inst.halted.call()
         }).then(function(halted) {
           // assert halted is false now
-          console.log("is halted?")
-          console.log(halted)
+          assert.equal(halted, false, "could not unhalt crowdsale")
         })
       })
     })
@@ -142,17 +135,14 @@ contract('Presale', function(accounts) {
         return inst.weiRaised.call()
       }).then(function(raised){
         // assert weiRaised = 20000
-        console.log('presale whitelist wei raised')
-        console.log(web3.fromWei(raised.toNumber()))
+        assert.equal(raised.toNumber(), 20000, "whitelist presale purchase did not issue correct amount")
         return token.totalSupply.call().then(function(totalSupply){
-          // assert total supply = 20000 * 4164
-          console.log('presale whitelist total supply')
           console.log(totalSupply.toNumber())
+          // assert total supply = 20000 * 1397
+          assert.equal(totalSupply.toNumber(), 20000*1397, "halted wei presale purchase did not issue correct amount")
           return token.balanceOf(accounts[1])
         }).then(function(purchased) {
-          // assert total = 20000 * 4164
-          console.log('presale whitelist token balance')
-          console.log(purchased.toNumber())
+          // assert total = 20000 * 1397
           assert.equal(purchased.toNumber(), (20000*1397), "2000 wei presale purchase did not issue correct amount")
         })
       })
@@ -162,16 +152,18 @@ contract('Presale', function(accounts) {
     return inst.sendTransaction({from: accounts[0], value: 75*Math.pow(10, 18)}).then(function(res) {
       return inst.weiRaised.call().then(function(raised){
         // assert weiRaised = 20000 + 50 eth
-        console.log(web3.fromWei(raised.toNumber()))
+        assert.equal(raised.toNumber(), 20000 + 75*Math.pow(10, 18), "tier one presale purchase did not issue correct amount")
         return token.totalSupply.call().then(function(totalSupply){
-          // assert total supply = 20000 * 4164 + 50 eth * 2164
-          console.log(web3.fromWei(totalSupply.toNumber()))
+          console.log(totalSupply.toNumber())
+          console.log(20000*1397 + (75*Math.pow(10, 18))*1164)
+          // assert total supply = 20000 * 1397 + 75 eth * 1164
+          assert.equal(totalSupply.toNumber(), 20000*1397 + (75*Math.pow(10, 18))*1164, "tier one presale totalSupply did not issue correct amount")
           return token.balanceOf(accounts[0])
         }).then(function(purchased) {
           // assert total = 50 eth * 2164
           var amount = web3.fromWei(purchased.toNumber())
-          assert.equal(amount, (75*1164), "50 eth purchase did not issue correct amount")
-          console.log(web3.fromWei(purchased.toNumber()))
+          console.log(purchased.toNumber())
+          assert.equal(amount, (75*1164), "75 eth purchase did not issue correct amount")
         })
       })
     })
@@ -306,6 +298,13 @@ contract('Presale', function(accounts) {
       console.log("final supply")
       console.log(web3.fromWei(total.toNumber()))
       assert.equal(web3.fromWei(total.toNumber()), 314159265, "Finalize did not issue correct tokens")
+      return token.mintingFinished.call()
+    }).then(function(doneMinting) {
+      assert.equal(doneMinting, true, "finished minting was not set correctly")
+      return token.owner.call()
+    }).then(function(owner) {
+      // assert that the token is now owned by master account
+      assert.equal(owner, accounts[0], "ownership was not transferred correctly")
     })
   })
 

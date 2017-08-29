@@ -2,8 +2,7 @@ pragma solidity ^0.4.11;
 
 
 import './StandardToken.sol';
-//import './ownership/Ownable.sol';
-
+import './ownership/Ownable.sol';
 
 
 /**
@@ -13,7 +12,7 @@ import './StandardToken.sol';
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
  */
 
-contract MintableToken is StandardToken {
+contract MintableToken is StandardToken, Ownable {
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
 
@@ -43,7 +42,7 @@ contract MintableToken is StandardToken {
    * @dev Function to stop minting new tokens.
    * @return True if the operation was successful.
    */
-  function finishMinting() returns (bool) {
+  function finishMinting() onlyOwner returns (bool) {
     mintingFinished = true;
     MintFinished();
     return true;

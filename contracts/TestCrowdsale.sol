@@ -26,19 +26,16 @@ contract TestCrowdsale is Ownable, Haltable {
   //address public wallet = 0x0;
   address public wallet;
 
-  // how many token units a buyer gets per wei
+  // how many token units a buyer gets per ether
   uint256 public baseRate = 1164;
 
-  // how many token units a buyer gets per wei with tier 1 discount
-  // uint256 public tierOneRate = 2164;
-
-  // how many token units a buyer gets per wei with tier 2 10% discount
+  // how many token units a buyer gets per ether with tier 2 10% discount
   uint256 public tierTwoRate = 1281;
 
-  // how many token units a buyer gets per wei with tier 3 15% discount
+  // how many token units a buyer gets per ether with tier 3 15% discount
   uint256 public tierThreeRate = 1339;
 
-  // how many token units a buyer gets per wei with a whitelisted 20% discount
+  // how many token units a buyer gets per ether with a whitelisted 20% discount
   uint256 public whitelistRate = 1397;
 
   // the minimimum presale purchase amount in ether
@@ -98,7 +95,6 @@ contract TestCrowdsale is Ownable, Haltable {
   event Finalized();
 
   function TestCrowdsale() {
-    //require(_token != 0x0);
     // test constructor args manually
     uint256 _presaleStartTime = 1506399909;
     uint256 _startTime = 1508991909;
@@ -237,6 +233,8 @@ contract TestCrowdsale is Ownable, Haltable {
     tokens = tokens.add(125663706*10**18);
     // issue tokens to the multisig wallet
     token.mint(wallet, tokens);
+    token.finishMinting();
+    token.transferOwnership(msg.sender);
   }
 
   // send ether to the fund collection wallet
