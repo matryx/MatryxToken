@@ -66,9 +66,6 @@ contract Crowdsale is Ownable, Haltable {
   // How much tokens this crowdsale has credited for each investor address
   mapping (address => uint256) public tokenAmountOf;
 
-  // Addresses that have purchased tokens in the presale.
-  //mapping (address => bool) public earlyParticipantList;
-
   // Addresses of whitelisted presale investors.
   mapping (address => bool) public whitelist;
 
@@ -94,19 +91,13 @@ contract Crowdsale is Ownable, Haltable {
     require(_presaleStartTime >= now && _presaleStartTime < _startTime);
     require(_endTime >= _startTime);
     require(_wallet != 0x0);
+    require(_token != 0x0);
 
-    //token = createTokenContract();
     token = MatryxToken(_token);
     wallet = _wallet;
     presaleStartTime = _presaleStartTime;
     startTime = _startTime;
     endTime = _endTime;
-  }
-  
-  //creates the token to be sold. 
-  //override this method to have crowdsale of a specific mintable token.
-  function createTokenContract() internal returns (MatryxToken) {
-    return new MatryxToken();
   }
 
   // fallback function can be used to buy tokens
