@@ -89,13 +89,14 @@ contract Crowdsale is Ownable, Haltable {
 
   event Finalized();
 
-  function Crowdsale(uint256 _presaleStartTime, uint256 _startTime, uint256 _endTime, address _wallet) {
+  function Crowdsale(uint256 _presaleStartTime, uint256 _startTime, uint256 _endTime, address _wallet, address _token) {
     require(_startTime >= now);
     require(_presaleStartTime >= now && _presaleStartTime < _startTime);
     require(_endTime >= _startTime);
     require(_wallet != 0x0);
 
-    token = createTokenContract();
+    //token = createTokenContract();
+    token = MatryxToken(_token);
     wallet = _wallet;
     presaleStartTime = _presaleStartTime;
     startTime = _startTime;
@@ -150,9 +151,6 @@ contract Crowdsale is Ownable, Haltable {
     weiRaised = weiRaised.add(weiAmount);
 
     token.mint(beneficiary, tokens);
-
-    // update the early list so they may purchase smaller amounts
-    //earlyParticipantList[msg.sender] = true;
 
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
