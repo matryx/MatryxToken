@@ -196,11 +196,9 @@ contract Crowdsale is Ownable, Haltable {
   function finalization() internal {
     // calculate token amount to be created
     // expected tokens sold
-    uint256 tokens = 188495559*10**18;
+    uint256 piTokens = 314159265*10**18;
     // get the difference of sold and expected
-    tokens = tokens.sub(token.totalSupply());
-    // add the remaining Nanome 40% of tokens
-    tokens = tokens.add(125663706*10**18);
+    uint256 tokens = piTokens.sub(token.totalSupply());
     // issue tokens to the multisig wallet
     token.mint(wallet, tokens);
     token.finishMinting();
