@@ -2,7 +2,7 @@ var MatryxToken = artifacts.require('./MatryxToken.sol')
 var Crowdsale = artifacts.require('./Crowdsale.sol')
 var TestCrowdsale = artifacts.require('./TestCrowdsale.sol')
 
-var test = false;
+var test = true;
 
 module.exports = function(deployer) {
   if(test) {

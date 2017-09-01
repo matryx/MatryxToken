@@ -7,7 +7,7 @@ import './ownership/Ownable.sol';
 
 /**
  * @title Crowdsale
- * Matryx crowdsale contract based on Open Zeppelin contract
+ * Matryx crowdsale contract based on Open Zeppelin and TokenMarket
  * This crowdsale is modified to have a presale time period
  * A whitelist function is added to allow discounts. There are
  * three tiers of tokens purchased per wei based on msg value.

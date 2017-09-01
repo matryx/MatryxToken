@@ -1,10 +1,9 @@
 pragma solidity ^0.4.11;
 
-import './MatryxToken.sol';
-import './MintableToken.sol';
-import './math/SafeMath.sol';
-import './Haltable.sol';
-import './ownership/Ownable.sol';
+import '../MatryxToken.sol';
+import '../math/SafeMath.sol';
+import '../Haltable.sol';
+import '../ownership/Ownable.sol';
 
 /**
  * @title TestCrowdsale
@@ -55,12 +54,6 @@ contract TestCrowdsale is Ownable, Haltable {
 
   // Total amount to be sold in the presale in ether
   uint256 public presaleCap = 809015 * 10**17;
-
-  // Has this crowdsale been finalized
-  // bool public finalized;
-
-  // Do we need to have unique contributor id for each customer
-  bool public requireCustomerId;
 
   // Is the contract finalized
   bool public isFinalized = false;
@@ -135,7 +128,6 @@ contract TestCrowdsale is Ownable, Haltable {
   function buyTokens(address beneficiary) stopInEmergency payable {
     require(beneficiary != 0x0);
     require(msg.value != 0);
-    require(!hasEnded());
     
     if(isPresale()) {
       require(validPrePurchase());
@@ -167,14 +159,11 @@ contract TestCrowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
-    token.mint(beneficiary, tokens);
-
-    // update the early list so they may purchase smaller amounts
-    //earlyParticipantList[msg.sender] = true;
-
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
+
+    token.mint(beneficiary, tokens);
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
@@ -191,9 +180,6 @@ contract TestCrowdsale is Ownable, Haltable {
     weiRaised = weiRaised.add(weiAmount);
 
     token.mint(beneficiary, tokens);
-
-    // update the early list so they may purchase smaller amounts
-    //earlyParticipantList[msg.sender] = true;
 
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
@@ -226,11 +212,9 @@ contract TestCrowdsale is Ownable, Haltable {
   function finalization() internal {
     // calculate token amount to be created
     // expected tokens sold
-    uint256 tokens = 188495559*10**18;
+    uint256 piTokens = 314159265*10**18;
     // get the difference of sold and expected
-    tokens = tokens.sub(token.totalSupply());
-    // add the remaining Nanome 40% of tokens
-    tokens = tokens.add(125663706*10**18);
+    uint256 tokens = piTokens.sub(token.totalSupply());
     // issue tokens to the multisig wallet
     token.mint(wallet, tokens);
     token.finishMinting();
@@ -246,7 +230,26 @@ contract TestCrowdsale is Ownable, Haltable {
   // Allow the owner to update the presale whitelist
   function updateWhitelist(address _purchaser) onlyOwner {
     whitelist[_purchaser] = true;
+    Whitelisted(_purchaser, true);
   }
+
+  /**
+   * Allow crowdsale owner to close early or extend the crowdsale.
+   *
+   * This is useful e.g. for a manual soft cap implementation:
+   * - after X amount is reached determine manual closing
+   *
+   * This may put the crowdsale to an invalid state,
+   * but we trust owners know what they are doing.
+   *
+   */
+  function setEndsAt(uint time) onlyOwner {
+    require(now < time);
+
+    endTime = time;
+    EndsAtChanged(endTime);
+  }
+
 
   // @return true if the presale transaction can buy tokens
   function validPrePurchase() internal constant returns (bool) {
