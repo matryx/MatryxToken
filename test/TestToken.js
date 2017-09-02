@@ -50,6 +50,7 @@ contract('MatryxToken', function(accounts) {
     let totalSupply = await token.totalSupply();
     assert(totalSupply, 100);
   })
+
   it('should fail to mint after call to finishMinting', async function () {
     await token.finishMinting();
     assert.equal(await token.mintingFinished(), true);
@@ -60,6 +61,7 @@ contract('MatryxToken', function(accounts) {
     let agent = await token.upgradeMaster.call()
     assert.equal(agent, accounts[0], 'incorrect upgrade agent set in constructor')
   })
+
   it('should deploy new upgradable token', async function() {
     migration = await MigrationTarget.new(token.address);
     let originalSupply = await migration.originalSupply.call()
@@ -72,6 +74,7 @@ contract('MatryxToken', function(accounts) {
     assert(oldToken, token.address)
 
   })
+
   it('token should be able to upgrade', async function() {
     let isUpgradable = await token.canUpgrade.call()
     assert(isUpgradable, true)
@@ -79,16 +82,19 @@ contract('MatryxToken', function(accounts) {
     let waitingAgent = await token.getUpgradeState.call()
     assert(waitingAgent.toString(), 2)
   })
+
   it('should set an upgrade agent', async function() {
     await token.setUpgradeAgent(migration.address, {from: accounts[0]})
     let ready = await token.getUpgradeState.call()
     assert(ready.toString(), 3)
   })
+
   it('only owner can set upgrade', async function() {
     await token.setUpgradeAgent(migration.address, {from: accounts[1]})
     let agent = await token.upgradeAgent.call()
     assert(agent, migration.address)
   })
+
   it('should upgrade tokens', async function() {
     await token.upgrade(50)
     let tokenSupply = await token.totalSupply.call()
@@ -108,11 +114,13 @@ contract('MatryxToken', function(accounts) {
     assert(tokenBal, 50)
     assert(newTokenBal, 50)
   })
+
   it('cant upgrade too much', async function() {
     await token.upgrade(50)
     let tokenSupply = await token.totalSupply.call()
     assert(tokenSupply, 50)
   })
+  
   it('Upgrade agent cannot be changed after the ugprade has begun', async function() {
     await token.setUpgradeAgent(token.address, {from: accounts[0]})
     let owner = await token.upgradeAgent.call()

@@ -21,6 +21,9 @@ contract TestCrowdsale is Ownable, Haltable {
   uint256 public endTime;
   uint256 public _now;
 
+  /* How many distinct addresses have invested */
+  uint public investorCount = 0;
+
   // address where funds are collected
   //address public wallet = 0x0;
   address public wallet;
@@ -119,11 +122,15 @@ contract TestCrowdsale is Ownable, Haltable {
     return new MatryxToken();
   }
 
-  // fallback function can be used to buy tokens
+  // fallback function throws
   function () payable {
-    buyTokens(msg.sender);
+    throw;
   }
 
+  function buy() public payable {
+    buyTokens(msg.sender);
+  }
+  
   // low level token purchase function
   function buyTokens(address beneficiary) stopInEmergency payable {
     require(beneficiary != 0x0);
@@ -162,6 +169,7 @@ contract TestCrowdsale is Ownable, Haltable {
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
+    investorCount++;
 
     token.mint(beneficiary, tokens);
 
@@ -184,6 +192,7 @@ contract TestCrowdsale is Ownable, Haltable {
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
+    investorCount++;
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 

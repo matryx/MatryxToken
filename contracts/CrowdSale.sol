@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.13;
 
 import './MatryxToken.sol';
 import './math/SafeMath.sol';
@@ -25,6 +25,9 @@ contract Crowdsale is Ownable, Haltable {
   uint256 public presaleStartTime;
   uint256 public startTime;
   uint256 public endTime;
+
+  // How many distinct addresses have invested
+  uint public investorCount = 0;
 
   // address where funds are collected
   address public wallet;
@@ -102,11 +105,16 @@ contract Crowdsale is Ownable, Haltable {
     endTime = _endTime;
   }
 
-  // fallback function can be used to buy tokens
+  // fallback function can't accept ether
   function () payable {
-    buyTokens(msg.sender);
+    throw;
   }
 
+  // default buy function
+  function buy() public payable {
+    buyTokens(msg.sender);
+  }
+  
   // low level token purchase function
   // owner may halt payments here
   function buyTokens(address beneficiary) stopInEmergency payable {
@@ -145,6 +153,7 @@ contract Crowdsale is Ownable, Haltable {
 
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
+    investorCount++;
 
     token.mint(beneficiary, tokens);
 
@@ -167,6 +176,7 @@ contract Crowdsale is Ownable, Haltable {
     // Update investor
     investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
+    investorCount++;
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
@@ -188,8 +198,8 @@ contract Crowdsale is Ownable, Haltable {
   }
 
   /**
-   * @dev Finalization logic. We take the expected sale cap of 188495559
-   * and find the difference from the actual minted tokens.
+   * @dev Finalization logic. We take the expected sale cap of 314159265
+   * ether and find the difference from the actual minted tokens.
    * The remaining balance and 40% of total supply are minted 
    * to the Matryx team multisig wallet.
    */

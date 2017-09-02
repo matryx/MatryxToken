@@ -1,3 +1,5 @@
+'use strict'
+
 import BigNumber from 'bignumber.js'
 
 const Crowdsale = artifacts.require("./TestCrowdsale.sol")
@@ -43,15 +45,18 @@ contract('Crowdsale', function(accounts) {
     // assert totalSupply init to 0
     assert.equal(tSupply, 0, "totalSupply not initilized correctly")
   })
+
   it("Crowdsale has correct owner", async function(){
     var owner = await inst.owner.call()
     assert.equal(owner, accounts[0])
   })
+
   it("token has correct owner", async function(){
     var tokenOwner = await token.owner.call()
     // assert token is owned by crowdsale contract
     assert.equal(tokenOwner, crowdsaleAddy)
   })
+
   it("sets the timestamps", async function(){
     presale = new Date().getTime() + 1
     start = new Date().getTime() + 2
@@ -71,6 +76,7 @@ contract('Crowdsale', function(accounts) {
     endTime = await inst.endTime.call()
     assert.equal(end, endTime, "non owner called end time")
   })
+
   it("updates the presale whitelist", function() {
     var watcher = inst.Whitelisted()
     return inst.updateWhitelist(accounts[1], {from: accounts[0]}).then(function(tx) {
@@ -84,11 +90,12 @@ contract('Crowdsale', function(accounts) {
       assert.isTrue(listed)
     })
   })
+
   it("can't buy before presale time", async function() {
     presale = new Date().getTime() + 10000
     presale = Math.floor(presale / 1000)
 
-    await inst.sendTransaction({from: accounts[0], value: 20000})
+    await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaiser = 0
     assert.equal(raised, 0, "wei raised is incorrect")
@@ -100,22 +107,8 @@ contract('Crowdsale', function(accounts) {
     let purchased = await token.balanceOf(accounts[0])
     // assert total = 0
     assert.equal(purchased, 0, "purchaser balance presale buy not correct")
-
-    // return inst.sendTransaction({from: accounts[0], value: 20000}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaiser = 0
-    //     assert.equal(raised.toNumber(), 0, "wei raised is incorrect")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       // assert total supply = 0
-    //       assert.equal(totalSupply.toNumber(), 0, "whitelist presale buy not correct")
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       // assert total = 0
-    //       assert.equal(purchased.toNumber(), 0, "purchaser balance presale buy not correct")
-    //     })
-    //   })
-    // })
   })
+
   it("can't buy presale low value non-whitelist purchase", async function() {
     presale = new Date().getTime()
     presale = Math.floor(presale / 1000)
@@ -125,20 +118,12 @@ contract('Crowdsale', function(accounts) {
     end = Math.floor(end / 1000)
 
     await inst.setTime(presale, start, end)
-    await inst.sendTransaction({from: accounts[0], value: 20000})
+    await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaiser = 0
     assert.equal(raised, 0, "can't presale buy not correct")
-
-    // return inst.setTime(presale, start, end).then(function() {
-    //   return inst.sendTransaction({from: accounts[0], value: 20000}).then(function(res) {
-    //     return inst.weiRaised.call().then(function(raised) {
-    //       // assert weiRaiser = 0
-    //       assert.equal(raised.toNumber(), 0, "can't presale buy not correct")
-    //     })
-    //   })
-    // })
   })
+
   it("halts payments in an emergency", async function() {
     presale = new Date().getTime() - 10000000
     presale = Math.floor(presale / 1000)
@@ -149,7 +134,7 @@ contract('Crowdsale', function(accounts) {
 
     await inst.setTime(presale, start, end)
     await inst.halt({from: accounts[0]})
-    await inst.sendTransaction({from: accounts[1], value: 20000})
+    await inst.buy({from: accounts[1], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert wei raised is 0
     assert.equal(raised.toNumber(), 0, "halted wei presale purchase did not issue correct amount")
@@ -158,24 +143,8 @@ contract('Crowdsale', function(accounts) {
     let halted = await inst.halted.call()
     // assert halted is false now
     assert.equal(halted, false, "could not unhalt crowdsale")
-
-    // return inst.setTime(presale, start, end).then(function() {
-    //   return inst.halt({from: accounts[0]}).then(function(){
-    //     return inst.sendTransaction({from: accounts[1], value: 20000}).then(function(res) {
-    //       return inst.weiRaised.call()
-    //     }).then(function(raised) {
-    //       // assert wei raised is 0
-    //       assert.equal(raised.toNumber(), 0, "halted wei presale purchase did not issue correct amount")
-    //       return inst.unhalt({from: accounts[0]})
-    //     }).then(function(res) {
-    //       return inst.halted.call()
-    //     }).then(function(halted) {
-    //       // assert halted is false now
-    //       assert.equal(halted, false, "could not unhalt crowdsale")
-    //     })
-    //   })
-    // })
   })
+
   it("can buy presale whitelist purchase", async function() {
     presale = new Date().getTime() - 10000000
     presale = Math.floor(presale / 1000)
@@ -185,7 +154,7 @@ contract('Crowdsale', function(accounts) {
     end = Math.floor(end / 1000)
 
     await inst.setTime(presale, start, end)
-    await inst.sendTransaction({from: accounts[1], value: 20000})
+    await inst.buy({from: accounts[1], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000
     assert.equal(raised.toNumber(), 20000, "whitelist presale purchase did not issue correct amount")
@@ -196,43 +165,17 @@ contract('Crowdsale', function(accounts) {
     a1Balance = await token.balanceOf(accounts[1])
     // assert total = 20000 * 1397
     assert.equal(a1Balance.toNumber(), (20000*1397), "20000 wei presale purchase did not issue correct amount")
-
-    // return inst.setTime(presale, start, end).then(function(){
-    //   return inst.sendTransaction({from: accounts[1], value: 20000}).then(function(res) {
-    //     return inst.weiRaised.call()
-    //   }).then(function(raised){
-    //     // assert weiRaised = 20000
-    //     assert.equal(raised.toNumber(), 20000, "whitelist presale purchase did not issue correct amount")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       tSupply = totalSupply
-    //       // assert total supply = 20000 * 1397
-    //       assert.equal(totalSupply.toNumber(), 20000*1397, "halted wei presale purchase did not issue correct amount")
-    //       return token.balanceOf(accounts[1])
-    //     }).then(function(purchased) {
-    //       a1Balance = purchased
-    //       // assert total = 20000 * 1397
-    //       assert.equal(purchased.toNumber(), (20000*1397), "20000 wei presale purchase did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("only owner can mint", async function() {
     await token.mint(crowdsaleAddy, 20000, {from: accounts[0]})
     tSupply = await token.totalSupply.call()
     // assert total supply = 20000 * 1397
     assert.equal(tSupply.toNumber(), 20000*1397, "direct minting purchase did not issue correct amount")
-
-    // return token.mint(crowdsaleAddy, 20000, {from: accounts[0]}).then(function(tx) {
-    //   return token.totalSupply.call()
-    // }).then(function(totalSupply){
-    //   tSupply = totalSupply
-    //   // assert total supply = 20000 * 1397
-    //   assert.equal(totalSupply.toNumber(), 20000*1397, "direct minting purchase did not issue correct amount")
-    //   // assert weiRaised = 20000
-    // })
   })
+
   it("can buy presale tier one purchase", async function() {
-    await inst.sendTransaction({from: accounts[0], value: 75*Math.pow(10, 18)})
+    await inst.buy({from: accounts[0], value: 75*Math.pow(10, 18)})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth
     assert.equal(raised.toNumber(), 20000 + 75*Math.pow(10, 18), "tier one presale purchase did not issue correct amount")    
@@ -241,25 +184,10 @@ contract('Crowdsale', function(accounts) {
     // assert total = 75 eth * 1164 + 20000 wei * 1164
     var sum = a0Balance.plus(a1Balance)
     assert.equal(tSupply.toString(10), sum.toString(10), "75 eth purchase did not issue correct amount")
-
-    // return inst.sendTransaction({from: accounts[0], value: 75*Math.pow(10, 18)}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = 20000 + 75 eth
-    //     assert.equal(raised.toNumber(), 20000 + 75*Math.pow(10, 18), "tier one presale purchase did not issue correct amount")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       tSupply = totalSupply
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       a0Balance = purchased
-    //       // assert total = 75 eth * 1164 + 20000 wei * 1164
-    //       var sum = a0Balance.plus(a1Balance)
-    //       assert.equal(tSupply.toString(10), sum.toString(10), "75 eth purchase did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("can buy presale tier two purchase", async function() {
-    await inst.sendTransaction({from: accounts[0], value: 150*Math.pow(10, 18)})
+    await inst.buy({from: accounts[0], value: 150*Math.pow(10, 18)})
     let raised = await inst.weiRaised.call()
     // asset weiRaised = 20000 + 75 eth + 150 eth
     let s = n1.plus(n2)
@@ -271,28 +199,10 @@ contract('Crowdsale', function(accounts) {
     // assert total = 75 eth * 1164 + 150 eth * 1281
     var sum = a0Balance.plus(new BigNumber(20000*1397))
     assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")    
-
-    // return inst.sendTransaction({from: accounts[0], value: 150*Math.pow(10, 18)}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = 20000 + 75 eth + 150 eth
-    //     var s = n1.plus(n2)
-    //     var s = s.plus(n4)
-    //     assert.equal(raised.toString(10), s.toString(10), "tier one presale purchase did not issue correct amount")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       // assert total supply = 20000 * 1397 + 75 eth * 1164 + 150 eth * 1281
-    //       tSupply = totalSupply
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       // assert total = 75 eth * 1164 + 150 eth * 1281
-    //       a0Balance = purchased
-    //       var sum = a0Balance.plus(new BigNumber(20000*1397))
-    //       assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("can buy presale tier three purchase", async function() {
-    await inst.sendTransaction({from: accounts[0], value: 300*Math.pow(10, 18)})
+    await inst.buy({from: accounts[0], value: 300*Math.pow(10, 18)})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth
     var s = n1.plus(n2).plus(n3).plus(n4)
@@ -303,49 +213,22 @@ contract('Crowdsale', function(accounts) {
     // assert total = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339
     var sum = a0Balance.plus(new BigNumber(20000*1397))
     assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")    
-
-    // return inst.sendTransaction({from: accounts[0], value: 300*Math.pow(10, 18)}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth
-    //     var s = n1.plus(n2).plus(n3).plus(n4)
-    //     assert.equal(raised.toString(10), s.toString(10), "tier one presale purchase did not issue correct amount")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       tSupply = totalSupply
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       // assert total = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339
-    //       a0Balance = purchased
-    //       var sum = a0Balance.plus(new BigNumber(20000*1397))
-    //       assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("can buy up to the presale cap", async function() {
     let raised = await inst.weiRaised.call()
     pt = p.minus(raised)
-    await inst.sendTransaction({from: accounts[1], value: pt})
+    await inst.buy({from: accounts[1], value: pt})
     raised = await inst.weiRaised.call()
     assert(raised.toString(10), p.toString(10))
 
     let bal = await token.balanceOf(accounts[1])
     assert(bal, new BigNumber(20000*1397).plus(pt.mul(1397)))
-
-    // return inst.weiRaised.call().then(function(raised) {
-    //   pt = p.minus(raised)
-    //   return inst.sendTransaction({from: accounts[1], value: pt}).then(function(tx) {
-    //     return inst.weiRaised.call().then(function(raised) {
-    //       assert(raised.toString(10), p.toString(10))
-    //       return token.balanceOf(accounts[1]).then(function(bal) {
-    //         assert(bal, new BigNumber(20000*1397).plus(pt.mul(1397)))
-    //       })
-    //     })
-    //   })
-    // })
   })
+
   it("can't buy if presale cap is reached", async function() {
     let events = inst.allEvents();
-    await inst.sendTransaction({from: accounts[0], value: 1})
+    await inst.buy({from: accounts[0], value: 1})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = presale total
     assert.equal(raised.toString(10), p.toString(10), "presale cap reached purchase did not issue correct amount")
@@ -360,27 +243,8 @@ contract('Crowdsale', function(accounts) {
     test = test.plus(n1.mul(1164)).plus(n2.mul(1281)).plus(n3.mul(1339)).plus(n4.mul(1397))
     // assert total tokens = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339 + remaining wei * 1397
     assert.equal(tSupply.toString(10), test.toString(10), "totalSupply incorrect")
-
-    // return inst.sendTransaction({from: accounts[0], value: 1}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = presale total
-    //     assert.equal(raised.toString(10), p.toString(10), "presale cap reached purchase did not issue correct amount")
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       tSupply = totalSupply
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       // assert total = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339
-    //       var amount = web3.fromWei(purchased.toNumber())
-    //       assert.equal(amount, (75*1164)+(150*1281)+(300*1339), "over cap eth purchase did not issue correct amount")
-    //       var test = pt
-    //       test = test.mul(1397)
-    //       test = test.plus(n1.mul(1164)).plus(n2.mul(1281)).plus(n3.mul(1339)).plus(n4.mul(1397))
-    //       // assert total tokens = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339 + remaining wei * 1397
-    //       assert.equal(tSupply.toString(10), test.toString(10), "totalSupply incorrect")
-    //     })
-    //   })
-    // })
   })
+
   it("can buy regular sale purchase", async function() {
     presale = new Date().getTime() - 10000000
     presale = Math.floor(presale / 1000)
@@ -390,7 +254,7 @@ contract('Crowdsale', function(accounts) {
     end = Math.floor(end / 1000)
 
     await inst.setTime(presale, start, end)
-    await inst.sendTransaction({from: accounts[0], value: 1*Math.pow(10, 18)})
+    await inst.buy({from: accounts[0], value: 1*Math.pow(10, 18)})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference
     var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt)
@@ -401,50 +265,21 @@ contract('Crowdsale', function(accounts) {
     // assert total = 50 eth * 2164 + 100 eth * 3164
     var amount = web3.fromWei(purchased.toNumber())
     assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "1 eth purchase did not issue correct amount")
-
-
-    // return inst.setTime(presale, start, end).then(function(){
-    //   return inst.sendTransaction({from: accounts[0], value: 1*Math.pow(10, 18)}).then(function(res) {
-    //     return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference
-    //       var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt)
-    //       assert.equal(raised.toString(10), s.toString(10), "presale cap reached purchase did not issue correct amount")
-    //       return token.totalSupply.call().then(function(totalSupply){
-    //         tSupply = totalSupply
-    //         return token.balanceOf(accounts[0])
-    //       }).then(function(purchased) {
-    //         // assert total = 50 eth * 2164 + 100 eth * 3164
-    //         var amount = web3.fromWei(purchased.toNumber())
-    //         assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "1 eth purchase did not issue correct amount")
-    //       })
-    //     })
-    //   })
-    // })
   })
+
   it("can buy up to the sale cap", async function() {
     let raised = await inst.weiRaised.call()
     tt = t.minus(raised)
-    await inst.sendTransaction({from: accounts[1], value: tt})
+    await inst.buy({from: accounts[1], value: tt})
     raised = await inst.weiRaised.call()
     assert(raised.toString(10), t.toString(10))
 
     let bal = await token.balanceOf(accounts[1])
     assert(bal, new BigNumber(20000*1397).plus(tt.mul(1164)).plus(pt.mul(1397)))
-
-    // return inst.weiRaised.call().then(function(raised) {
-    //   tt = t.minus(raised)
-    //   return inst.sendTransaction({from: accounts[1], value: tt}).then(function(tx) {
-    //     return inst.weiRaised.call().then(function(raised) {
-    //       assert(raised.toString(10), t.toString(10))
-    //       return token.balanceOf(accounts[1]).then(function(bal) {
-    //         assert(bal, new BigNumber(20000*1397).plus(tt.mul(1164)).plus(pt.mul(1397)))
-    //       })
-    //     })
-    //   })
-    // })
   })
+
   it("can't buy if sale cap is reached", async function() {
-    await inst.sendTransaction({from: accounts[0], value: 1})
+    await inst.buy({from: accounts[0], value: 1})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference + sale cap
     var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt).plus(tt)
@@ -455,29 +290,14 @@ contract('Crowdsale', function(accounts) {
     // assert total = 50 eth * 2164 + 100 eth * 3164
     var amount = web3.fromWei(purchased.toNumber())
     assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "over cap eth purchase did not issue correct amount")
-
-    // return inst.sendTransaction({from: accounts[0], value: 1}).then(function(res) {
-    //   return inst.weiRaised.call().then(function(raised){
-    //     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference + sale cap
-    //     var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt).plus(tt)
-    //     assert.equal(raised.toString(10), s.toString(10), "sale cap reached purchase did not issue correct amount") 
-    //     return token.totalSupply.call().then(function(totalSupply){
-    //       tSupply = totalSupply
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       // assert total = 50 eth * 2164 + 100 eth * 3164
-    //       var amount = web3.fromWei(purchased.toNumber())
-    //       assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "over cap eth purchase did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("can't buy after sale end time", async function() {
     end = new Date().getTime()
     end = Math.floor(end / 1000)
 
     await inst.setTime(presale, start, end)
-    await inst.sendTransaction({from: accounts[0], value: 20000})
+    await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference + sale cap
     var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt).plus(tt)
@@ -486,21 +306,8 @@ contract('Crowdsale', function(accounts) {
     let purchased = await token.balanceOf(accounts[0])
     var amount = web3.fromWei(purchased.toNumber())
     assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "after time end did not issue correct amount")    
-
-    // return inst.setTime(presale, start, end).then(function() {
-    //   return inst.sendTransaction({from: accounts[0], value: 20000}).then(function(res) {
-    //     return inst.weiRaised.call().then(function(raised) {
-    //       // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference + sale cap
-    //       var s = n1.plus(n2).plus(n3).plus(n4).plus(n5).plus(pt).plus(tt)
-    //       assert.equal(raised.toString(10), s.toString(10), "presale cap reached purchase did not issue correct amount")         
-    //       return token.balanceOf(accounts[0])
-    //     }).then(function(purchased) {
-    //       var amount = web3.fromWei(purchased.toNumber())
-    //       assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "after time end did not issue correct amount")
-    //     })
-    //   })
-    // })
   })
+
   it("owner can finalize", function() {
     return inst.finalize({from: accounts[0]}).then(function(res) {
       return inst.isFinalized.call()
@@ -523,5 +330,4 @@ contract('Crowdsale', function(accounts) {
       assert(web3.fromWei(bal.toNumber()), 107705112.5)
     })
   })
-
 })
