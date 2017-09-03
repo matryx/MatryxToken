@@ -215,6 +215,12 @@ contract('Crowdsale', function(accounts) {
     assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")    
   })
 
+  it("has correct purchaser count", async function() {
+    let purchased = await inst.purchaserCount.call()
+    assert(purchased, 2)
+  })
+
+
   it("can buy up to the presale cap", async function() {
     let raised = await inst.weiRaised.call()
     pt = p.minus(raised)

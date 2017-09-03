@@ -26,8 +26,8 @@ contract Crowdsale is Ownable, Haltable {
   uint256 public startTime;
   uint256 public endTime;
 
-  // How many distinct addresses have invested
-  uint public investorCount = 0;
+  // How many distinct addresses have purchased
+  uint public purchaserCount = 0;
 
   // address where funds are collected
   address public wallet;
@@ -66,7 +66,7 @@ contract Crowdsale is Ownable, Haltable {
   bool public isFinalized = false;
 
   // How much ETH each address has invested to this crowdsale
-  mapping (address => uint256) public investedAmountOf;
+  mapping (address => uint256) public purchasedAmountOf;
 
   // How many tokens this crowdsale has credited for each investor address
   mapping (address => uint256) public tokenAmountOf;
@@ -151,9 +151,9 @@ contract Crowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
-    investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
+    purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    investorCount++;
+    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
 
     token.mint(beneficiary, tokens);
 
@@ -171,12 +171,12 @@ contract Crowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
-    token.mint(beneficiary, tokens);
-
-    // Update investor
-    investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
+    // Update purchaser
+    purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    investorCount++;
+    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
+
+    token.mint(beneficiary, tokens);
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.13;
 
 import '../MatryxToken.sol';
 import '../math/SafeMath.sol';
@@ -6,8 +6,14 @@ import '../Haltable.sol';
 import '../ownership/Ownable.sol';
 
 /**
- * @title TestCrowdsale
- * This is for manual testing of unix epochs
+ * @title Crowdsale
+ * Matryx crowdsale contract based on Open Zeppelin and TokenMarket
+ * This crowdsale is modified to have a presale time period
+ * A whitelist function is added to allow discounts. There are
+ * three tiers of tokens purchased per wei based on msg value.
+ * A finalization function can be called by the owner to issue 
+ * Matryx reserves, close minting, and transfer token ownership 
+ * away from the crowdsale and back to the owner.
  */
 contract TestCrowdsale is Ownable, Haltable {
   using SafeMath for uint256;
@@ -21,11 +27,10 @@ contract TestCrowdsale is Ownable, Haltable {
   uint256 public endTime;
   uint256 public _now;
 
-  /* How many distinct addresses have invested */
-  uint public investorCount = 0;
+  // How many distinct addresses have purchased
+  uint public purchaserCount = 0;
 
   // address where funds are collected
-  //address public wallet = 0x0;
   address public wallet;
 
   // how many token units a buyer gets per ether
@@ -55,20 +60,17 @@ contract TestCrowdsale is Ownable, Haltable {
   // Total amount to be sold in ether
   uint256 public cap = 161803 * 10**18;
 
-  // Total amount to be sold in the presale in ether
+  // Total amount to be sold in the presale in. cap/2
   uint256 public presaleCap = 809015 * 10**17;
 
   // Is the contract finalized
   bool public isFinalized = false;
 
   // How much ETH each address has invested to this crowdsale
-  mapping (address => uint256) public investedAmountOf;
+  mapping (address => uint256) public purchasedAmountOf;
 
-  // How much tokens this crowdsale has credited for each investor address
+  // How many tokens this crowdsale has credited for each investor address
   mapping (address => uint256) public tokenAmountOf;
-
-  // Addresses that have purchased tokens in the presale.
-  //mapping (address => bool) public earlyParticipantList;
 
   // Addresses of whitelisted presale investors.
   mapping (address => bool) public whitelist;
@@ -122,16 +124,18 @@ contract TestCrowdsale is Ownable, Haltable {
     return new MatryxToken();
   }
 
-  // fallback function throws
+  // fallback function can't accept ether
   function () payable {
     throw;
   }
 
+  // default buy function
   function buy() public payable {
     buyTokens(msg.sender);
   }
   
   // low level token purchase function
+  // owner may halt payments here
   function buyTokens(address beneficiary) stopInEmergency payable {
     require(beneficiary != 0x0);
     require(msg.value != 0);
@@ -166,10 +170,9 @@ contract TestCrowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
-    // Update investor
-    investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
+    purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    investorCount++;
+    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
 
     token.mint(beneficiary, tokens);
 
@@ -187,12 +190,12 @@ contract TestCrowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
-    token.mint(beneficiary, tokens);
-
-    // Update investor
-    investedAmountOf[msg.sender] = investedAmountOf[msg.sender].add(msg.value);
+    // Update purchaser
+    purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    investorCount++;
+    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
+
+    token.mint(beneficiary, tokens);
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
@@ -214,9 +217,10 @@ contract TestCrowdsale is Ownable, Haltable {
   }
 
   /**
-   * @dev Can be overriden to add finalization logic. The overriding function
-   * should call super.finalization() to ensure the chain of finalization is
-   * executed entirely.
+   * @dev Finalization logic. We take the expected sale cap of 314159265
+   * ether and find the difference from the actual minted tokens.
+   * The remaining balance and 40% of total supply are minted 
+   * to the Matryx team multisig wallet.
    */
   function finalization() internal {
     // calculate token amount to be created
@@ -271,7 +275,7 @@ contract TestCrowdsale is Ownable, Haltable {
 
   // @return true if the transaction can buy tokens
   function validPurchase() internal constant returns (bool) {
-    bool withinPeriod = now >= presaleStartTime && now <= endTime;
+    bool withinPeriod = now >= startTime && now <= endTime;
     bool withinCap = weiRaised.add(msg.value) <= cap;
     return withinPeriod && withinCap;
   }
