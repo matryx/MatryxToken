@@ -36,10 +36,17 @@ const p = new BigNumber(809015*Math.pow(10, 17))
 // sale wei cap
 const t = new BigNumber(161803*Math.pow(10, 18))
 
+// test constructor args manually
+const _presaleStartTime = 1506399909
+const _startTime = 1508991909
+const _endTime = 1511673909
+const _wallet = "0x01da6F5F5C89F3a83CC6BeBb0eAFC1f1E1c4A303"
+
 contract('Crowdsale', function(accounts) {
   it("Crowdsale & Token deployed", async function() {
-    inst = await Crowdsale.new()
-    token = Token.at(await inst.token())
+    token = await Token.new()
+    inst = await Crowdsale.new(_presaleStartTime, _startTime, _endTime, _wallet, token.address)
+    await token.transferOwnership(inst.address)
     tSupply = await token.totalSupply.call()
     crowdsaleAddy = inst.address
     // assert totalSupply init to 0

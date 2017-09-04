@@ -92,19 +92,14 @@ contract TestCrowdsale is Ownable, Haltable {
 
   event Finalized();
 
-  function TestCrowdsale() {
-    // test constructor args manually
-    uint256 _presaleStartTime = 1506399909;
-    uint256 _startTime = 1508991909;
-    uint256 _endTime = 1511673909;
-    address _wallet = 0x01da6F5F5C89F3a83CC6BeBb0eAFC1f1E1c4A303;
-
+  function TestCrowdsale(uint256 _presaleStartTime, uint256 _startTime, uint256 _endTime, address _wallet, address _token) {
     require(_startTime >= now);
     require(_presaleStartTime >= now && _presaleStartTime < _startTime);
     require(_endTime >= _startTime);
     require(_wallet != 0x0);
+    require(_token != 0x0);
 
-    token = createTokenContract();
+    token = MatryxToken(_token);
     wallet = _wallet;
     presaleStartTime = _presaleStartTime;
     startTime = _startTime;
@@ -117,11 +112,6 @@ contract TestCrowdsale is Ownable, Haltable {
     presaleStartTime = _presaleStartTime;
     startTime = _startTime;
     endTime = _endTime;
-  }
-  //creates the token to be sold. 
-  //override this method to have crowdsale of a specific mintable token.
-  function createTokenContract() internal returns (MatryxToken) {
-    return new MatryxToken();
   }
 
   // fallback function can't accept ether
@@ -170,10 +160,10 @@ contract TestCrowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
+    // Update purchaser
     if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
     purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    
 
     token.mint(beneficiary, tokens);
 
