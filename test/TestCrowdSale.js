@@ -217,7 +217,7 @@ contract('Crowdsale', function(accounts) {
 
   it("has correct purchaser count", async function() {
     let purchased = await inst.purchaserCount.call()
-    assert(purchased, 2)
+    assert(purchased.toNumber(), 2)
   })
 
 

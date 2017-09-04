@@ -170,9 +170,10 @@ contract TestCrowdsale is Ownable, Haltable {
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
+    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
     purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
+    
 
     token.mint(beneficiary, tokens);
 
