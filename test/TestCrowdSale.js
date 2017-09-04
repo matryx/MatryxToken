@@ -159,19 +159,19 @@ contract('Crowdsale', function(accounts) {
     // assert weiRaised = 20000
     assert.equal(raised.toNumber(), 20000, "whitelist presale purchase did not issue correct amount")
     tSupply = await token.totalSupply.call()
-    // assert total supply = 20000 * 1397
-    assert.equal(tSupply.toNumber(), 20000*1397, "halted wei presale purchase did not issue correct amount")
+    // assert total supply = 20000 * 1456
+    assert.equal(tSupply.toNumber(), 20000*1456, "halted wei presale purchase did not issue correct amount")
     
     a1Balance = await token.balanceOf(accounts[1])
-    // assert total = 20000 * 1397
-    assert.equal(a1Balance.toNumber(), (20000*1397), "20000 wei presale purchase did not issue correct amount")
+    // assert total = 20000 * 1456
+    assert.equal(a1Balance.toNumber(), (20000*1456), "20000 wei presale purchase did not issue correct amount")
   })
 
   it("only owner can mint", async function() {
     await token.mint(crowdsaleAddy, 20000, {from: accounts[0]})
     tSupply = await token.totalSupply.call()
-    // assert total supply = 20000 * 1397
-    assert.equal(tSupply.toNumber(), 20000*1397, "direct minting purchase did not issue correct amount")
+    // assert total supply = 20000 * 1456
+    assert.equal(tSupply.toNumber(), 20000*1456, "direct minting purchase did not issue correct amount")
   })
 
   it("can buy presale tier one purchase", async function() {
@@ -196,8 +196,8 @@ contract('Crowdsale', function(accounts) {
 
     tSupply = await token.totalSupply.call()
     a0Balance = await token.balanceOf(accounts[0])
-    // assert total = 75 eth * 1164 + 150 eth * 1281
-    var sum = a0Balance.plus(new BigNumber(20000*1397))
+    // assert total = 75 eth * 1164 + 150 eth * 1294
+    var sum = a0Balance.plus(new BigNumber(20000*1456))
     assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")    
   })
 
@@ -210,8 +210,8 @@ contract('Crowdsale', function(accounts) {
 
     tSupply = await token.totalSupply.call()
     a0Balance = await token.balanceOf(accounts[0])
-    // assert total = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339
-    var sum = a0Balance.plus(new BigNumber(20000*1397))
+    // assert total = 75 eth * 1164 + 150 eth * 1294 + 300 eth * 1371
+    var sum = a0Balance.plus(new BigNumber(20000*1456))
     assert.equal(tSupply.toString(10), sum.toString(10), "150 eth purchase did not issue correct amount")    
   })
 
@@ -229,7 +229,7 @@ contract('Crowdsale', function(accounts) {
     assert(raised.toString(10), p.toString(10))
 
     let bal = await token.balanceOf(accounts[1])
-    assert(bal, new BigNumber(20000*1397).plus(pt.mul(1397)))
+    assert(bal, new BigNumber(20000*1456).plus(pt.mul(1456)))
   })
 
   it("can't buy if presale cap is reached", async function() {
@@ -241,13 +241,13 @@ contract('Crowdsale', function(accounts) {
     
     tSupply = await token.totalSupply.call()
     let purchased = await token.balanceOf(accounts[0])
-    // assert total = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339
+    // assert total = 75 eth * 1164 + 150 eth * 1294 + 300 eth * 1371
     var amount = web3.fromWei(purchased.toNumber())
-    assert.equal(amount, (75*1164)+(150*1281)+(300*1339), "over cap eth purchase did not issue correct amount")
+    assert.equal(amount, (75*1164)+(150*1294)+(300*1371), "over cap eth purchase did not issue correct amount")
     var test = pt
-    test = test.mul(1397)
-    test = test.plus(n1.mul(1164)).plus(n2.mul(1281)).plus(n3.mul(1339)).plus(n4.mul(1397))
-    // assert total tokens = 75 eth * 1164 + 150 eth * 1281 + 300 eth * 1339 + remaining wei * 1397
+    test = test.mul(1456)
+    test = test.plus(n1.mul(1164)).plus(n2.mul(1294)).plus(n3.mul(1371)).plus(n4.mul(1456))
+    // assert total tokens = 75 eth * 1164 + 150 eth * 1294 + 300 eth * 1371 + remaining wei * 1456
     assert.equal(tSupply.toString(10), test.toString(10), "totalSupply incorrect")
   })
 
@@ -270,7 +270,7 @@ contract('Crowdsale', function(accounts) {
     let purchased = await token.balanceOf(accounts[0])
     // assert total = 50 eth * 2164 + 100 eth * 3164
     var amount = web3.fromWei(purchased.toNumber())
-    assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "1 eth purchase did not issue correct amount")
+    assert.equal(amount, (75*1164)+(150*1294)+(300*1371)+1164, "1 eth purchase did not issue correct amount")
   })
 
   it("can buy up to the sale cap", async function() {
@@ -281,7 +281,7 @@ contract('Crowdsale', function(accounts) {
     assert(raised.toString(10), t.toString(10))
 
     let bal = await token.balanceOf(accounts[1])
-    assert(bal, new BigNumber(20000*1397).plus(tt.mul(1164)).plus(pt.mul(1397)))
+    assert(bal, new BigNumber(20000*1456).plus(tt.mul(1164)).plus(pt.mul(1456)))
   })
 
   it("can't buy if sale cap is reached", async function() {
@@ -295,7 +295,7 @@ contract('Crowdsale', function(accounts) {
     let purchased = await token.balanceOf(accounts[0])
     // assert total = 50 eth * 2164 + 100 eth * 3164
     var amount = web3.fromWei(purchased.toNumber())
-    assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "over cap eth purchase did not issue correct amount")
+    assert.equal(amount, (75*1164)+(150*1294)+(300*1371)+1164, "over cap eth purchase did not issue correct amount")
   })
 
   it("can't buy after sale end time", async function() {
@@ -311,7 +311,7 @@ contract('Crowdsale', function(accounts) {
 
     let purchased = await token.balanceOf(accounts[0])
     var amount = web3.fromWei(purchased.toNumber())
-    assert.equal(amount, (75*1164)+(150*1281)+(300*1339)+1164, "after time end did not issue correct amount")    
+    assert.equal(amount, (75*1164)+(150*1294)+(300*1371)+1164, "after time end did not issue correct amount")    
   })
 
   it("owner can finalize", function() {

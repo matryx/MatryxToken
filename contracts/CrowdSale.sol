@@ -36,13 +36,13 @@ contract Crowdsale is Ownable, Haltable {
   uint256 public baseRate = 1164;
 
   // how many token units a buyer gets per ether with tier 2 10% discount
-  uint256 public tierTwoRate = 1281;
+  uint256 public tierTwoRate = 1294;
 
   // how many token units a buyer gets per ether with tier 3 15% discount
-  uint256 public tierThreeRate = 1339;
+  uint256 public tierThreeRate = 1371;
 
   // how many token units a buyer gets per ether with a whitelisted 20% discount
-  uint256 public whitelistRate = 1397;
+  uint256 public whitelistRate = 1456;
 
   // the minimimum presale purchase amount in ether
   uint256 public tierOnePurchase = 75 * 10**18;
