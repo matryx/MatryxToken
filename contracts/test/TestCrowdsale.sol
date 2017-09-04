@@ -125,7 +125,7 @@ contract TestCrowdsale is Ownable, Haltable {
   }
 
   // fallback function can't accept ether
-  function () payable {
+  function () {
     throw;
   }
 
