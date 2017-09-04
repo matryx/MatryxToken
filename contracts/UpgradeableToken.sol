@@ -83,11 +83,6 @@ contract UpgradeableToken is StandardToken {
    */
   function setUpgradeAgent(address agent) external {
 
-      if(!canUpgrade()) {
-        // The token is not yet in a state that we could think of upgrading
-        throw;
-      }
-
       if (agent == 0x0) throw;
       // Only a master can designate the next agent
       if (msg.sender != upgradeMaster) throw;
@@ -108,8 +103,7 @@ contract UpgradeableToken is StandardToken {
    * Get the state of the token upgrade.
    */
   function getUpgradeState() public constant returns(UpgradeState) {
-    if(!canUpgrade()) return UpgradeState.NotAllowed;
-    else if(address(upgradeAgent) == 0x00) return UpgradeState.WaitingForAgent;
+    if(address(upgradeAgent) == 0x00) return UpgradeState.WaitingForAgent;
     else if(totalUpgraded == 0) return UpgradeState.ReadyToUpgrade;
     else return UpgradeState.Upgrading;
   }
@@ -125,11 +119,5 @@ contract UpgradeableToken is StandardToken {
       upgradeMaster = master;
   }
 
-  /**
-   * Child contract can enable to provide the condition when the upgrade can begun.
-   */
-  function canUpgrade() public constant returns(bool) {
-     return true;
-  }
 
 }
