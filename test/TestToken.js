@@ -76,9 +76,6 @@ contract('MatryxToken', function(accounts) {
   })
 
   it('token should be able to upgrade', async function() {
-    let isUpgradable = await token.canUpgrade.call()
-    assert(isUpgradable, true)
-
     let waitingAgent = await token.getUpgradeState.call()
     assert(waitingAgent.toString(), 2)
   })
