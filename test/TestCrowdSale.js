@@ -1,8 +1,9 @@
 'use strict'
 
 import BigNumber from 'bignumber.js'
+import {increaseTimeTo, duration} from './helpers/increaseTime'
 
-const Crowdsale = artifacts.require("./TestCrowdsale.sol")
+const Crowdsale = artifacts.require("./Crowdsale.sol")
 const Token = artifacts.require("./MatryxToken")
 
 let inst
@@ -36,11 +37,11 @@ const p = new BigNumber(809015*Math.pow(10, 17))
 // sale wei cap
 const t = new BigNumber(161803*Math.pow(10, 18))
 
-// test constructor args manually
-const _presaleStartTime = 1506399909
-const _startTime = 1508991909
-const _endTime = 1511673909
-const _wallet = "0x01da6F5F5C89F3a83CC6BeBb0eAFC1f1E1c4A303"
+// init args
+let _presaleStartTime = 1506399909
+let _startTime = 1508991909
+let _endTime = 1511673909
+let _wallet = "0x01da6F5F5C89F3a83CC6BeBb0eAFC1f1E1c4A303"
 
 contract('Crowdsale', function(accounts) {
   it("Crowdsale & Token deployed", async function() {
@@ -80,25 +81,25 @@ contract('Crowdsale', function(accounts) {
     assert.equal(tokenOwner, crowdsaleAddy)
   })
 
-  it("sets the timestamps", async function(){
-    presale = new Date().getTime() + 1
-    start = new Date().getTime() + 2
-    end = new Date().getTime() + 3
+  // it("sets the timestamps", async function(){
+  //   presale = new Date().getTime() + 1
+  //   start = new Date().getTime() + 2
+  //   end = new Date().getTime() + 3
 
-    await inst.setTime(presale, start, end)
-    let time = await inst.presaleStartTime.call()
-    assert.equal(time, presale, "presale time not set correctly")
-    end = new Date().getTime()
-    await inst.setEndsAt(end)
-    let endTime = await inst.endTime.call()
-    assert.equal(end, endTime, "end time not set correctly")
+  //   await inst.setTime(presale, start, end)
+  //   let time = await inst.presaleStartTime.call()
+  //   assert.equal(time, presale, "presale time not set correctly")
+  //   end = new Date().getTime()
+  //   await inst.setEndsAt(end)
+  //   let endTime = await inst.endTime.call()
+  //   assert.equal(end, endTime, "end time not set correctly")
 
-    // assert only owner can change end time
-    let _end = new Date().getTime() + 1337
-    await inst.setEndsAt(_end, {from: accounts[1]})
-    endTime = await inst.endTime.call()
-    assert.equal(end, endTime, "non owner called end time")
-  })
+  //   // assert only owner can change end time
+  //   let _end = new Date().getTime() + 1337
+  //   await inst.setEndsAt(_end, {from: accounts[1]})
+  //   endTime = await inst.endTime.call()
+  //   assert.equal(end, endTime, "non owner called end time")
+  // })
 
   it("updates the presale whitelist", function() {
     var watcher = inst.Whitelisted()
@@ -133,50 +134,15 @@ contract('Crowdsale', function(accounts) {
   })
 
   it("can't buy presale low value non-whitelist purchase", async function() {
-    presale = new Date().getTime()
-    presale = Math.floor(presale / 1000)
-    start = new Date().getTime() + 10000
-    start = Math.floor(start / 1000)
-    end = new Date().getTime() + 20000
-    end = Math.floor(end / 1000)
-
-    await inst.setTime(presale, start, end)
+    let afterPresaleStart = _presaleStartTime + duration.seconds(1)
+    await increaseTimeTo(afterPresaleStart)
     await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaiser = 0
     assert.equal(raised, 0, "can't presale buy not correct")
   })
 
-  it("halts payments in an emergency", async function() {
-    presale = new Date().getTime() - 10000000
-    presale = Math.floor(presale / 1000)
-    start = new Date().getTime() + 10000000
-    start = Math.floor(start / 1000)
-    end = new Date().getTime() + 20000000
-    end = Math.floor(end / 1000)
-
-    await inst.setTime(presale, start, end)
-    await inst.halt({from: accounts[0]})
-    await inst.buy({from: accounts[1], value: 20000})
-    let raised = await inst.weiRaised.call()
-    // assert wei raised is 0
-    assert.equal(raised.toNumber(), 0, "halted wei presale purchase did not issue correct amount")
-
-    await inst.unhalt({from: accounts[0]})
-    let halted = await inst.halted.call()
-    // assert halted is false now
-    assert.equal(halted, false, "could not unhalt crowdsale")
-  })
-
   it("can buy presale whitelist purchase", async function() {
-    presale = new Date().getTime() - 10000000
-    presale = Math.floor(presale / 1000)
-    start = new Date().getTime() + 10000000
-    start = Math.floor(start / 1000)
-    end = new Date().getTime() + 20000000
-    end = Math.floor(end / 1000)
-
-    await inst.setTime(presale, start, end)
     await inst.buy({from: accounts[1], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000
@@ -188,6 +154,19 @@ contract('Crowdsale', function(accounts) {
     a1Balance = await token.balanceOf(accounts[1])
     // assert total = 20000 * 1456
     assert.equal(a1Balance.toNumber(), (20000*1456), "20000 wei presale purchase did not issue correct amount")
+  })
+
+  it("halts payments in an emergency", async function() {
+    await inst.halt({from: accounts[0]})
+    await inst.buy({from: accounts[1], value: 20000})
+    let raised = await inst.weiRaised.call()
+    // assert wei raised is 0
+    assert.equal(raised.toNumber(), 20000, "halted wei presale purchase did not issue correct amount")
+
+    await inst.unhalt({from: accounts[0]})
+    let halted = await inst.halted.call()
+    // assert halted is false now
+    assert.equal(halted, false, "could not unhalt crowdsale")
   })
 
   it("token cannot be transfered before Finalized", async function() {
@@ -292,14 +271,9 @@ contract('Crowdsale', function(accounts) {
   })
 
   it("can buy regular sale purchase", async function() {
-    presale = new Date().getTime() - 10000000
-    presale = Math.floor(presale / 1000)
-    start = new Date().getTime()
-    start = Math.floor(start / 1000)
-    end = new Date().getTime() + 20000000
-    end = Math.floor(end / 1000)
+    let afterStart = _startTime + duration.seconds(1)
+    await increaseTimeTo(afterStart)
 
-    await inst.setTime(presale, start, end)
     await inst.buy({from: accounts[0], value: 1*Math.pow(10, 18)})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference
@@ -339,10 +313,9 @@ contract('Crowdsale', function(accounts) {
   })
 
   it("can't buy after sale end time", async function() {
-    end = new Date().getTime()
-    end = Math.floor(end / 1000)
+    let afterEnd = _endTime + duration.seconds(1)
+    await increaseTimeTo(afterEnd)
 
-    await inst.setTime(presale, start, end)
     await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaised = 20000 + 75 eth + 150 eth + 300 eth + 1 eth + presale cap difference + sale cap
