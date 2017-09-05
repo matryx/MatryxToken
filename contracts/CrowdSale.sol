@@ -224,9 +224,9 @@ contract Crowdsale is Ownable, Haltable {
   }
 
   // Allow the owner to update the presale whitelist
-  function updateWhitelist(address _purchaser) onlyOwner {
-    whitelist[_purchaser] = true;
-    Whitelisted(_purchaser, true);
+  function updateWhitelist(address _purchaser, bool _listed) onlyOwner {
+    whitelist[_purchaser] = _listed;
+    Whitelisted(_purchaser, _listed);
   }
 
   /**

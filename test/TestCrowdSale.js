@@ -8,9 +8,6 @@ const Token = artifacts.require("./MatryxToken")
 
 let inst
 let token
-let presale
-let start
-let end
 let crowdsaleAddy
 
 // token balances
@@ -81,29 +78,9 @@ contract('Crowdsale', function(accounts) {
     assert.equal(tokenOwner, crowdsaleAddy)
   })
 
-  // it("sets the timestamps", async function(){
-  //   presale = new Date().getTime() + 1
-  //   start = new Date().getTime() + 2
-  //   end = new Date().getTime() + 3
-
-  //   await inst.setTime(presale, start, end)
-  //   let time = await inst.presaleStartTime.call()
-  //   assert.equal(time, presale, "presale time not set correctly")
-  //   end = new Date().getTime()
-  //   await inst.setEndsAt(end)
-  //   let endTime = await inst.endTime.call()
-  //   assert.equal(end, endTime, "end time not set correctly")
-
-  //   // assert only owner can change end time
-  //   let _end = new Date().getTime() + 1337
-  //   await inst.setEndsAt(_end, {from: accounts[1]})
-  //   endTime = await inst.endTime.call()
-  //   assert.equal(end, endTime, "non owner called end time")
-  // })
-
   it("updates the presale whitelist", function() {
     var watcher = inst.Whitelisted()
-    return inst.updateWhitelist(accounts[1], {from: accounts[0]}).then(function(tx) {
+    return inst.updateWhitelist(accounts[1], true, {from: accounts[0]}).then(function(tx) {
       return watcher.get()
     }).then(function(e){
       assert.equal(e.length, 1);
@@ -115,10 +92,16 @@ contract('Crowdsale', function(accounts) {
     })
   })
 
-  it("can't buy before presale time", async function() {
-    presale = new Date().getTime() + 10000
-    presale = Math.floor(presale / 1000)
+  it("can unwhitelist a purchaser", async function() {
+    await inst.updateWhitelist(accounts[1], false, {from: accounts[0]})
+    let whitelisted = await inst.whitelist.call(accounts[1])
+    assert.equal(whitelisted, false)
+    await inst.updateWhitelist(accounts[1], true, {from: accounts[0]})
+    whitelisted = await inst.whitelist.call(accounts[1])
+    assert.equal(whitelisted, true)
+  })
 
+  it("can't buy before presale time", async function() {
     await inst.buy({from: accounts[0], value: 20000})
     let raised = await inst.weiRaised.call()
     // assert weiRaiser = 0
