@@ -46,12 +46,28 @@ contract('Crowdsale', function(accounts) {
   it("Crowdsale & Token deployed", async function() {
     token = await Token.new()
     inst = await Crowdsale.new(_presaleStartTime, _startTime, _endTime, _wallet, token.address)
-    await token.transferOwnership(inst.address)
     tSupply = await token.totalSupply.call()
     crowdsaleAddy = inst.address
     // assert totalSupply init to 0
     assert.equal(tSupply, 0, "totalSupply not initilized correctly")
   })
+
+  it("Only owner can set release agent", async function() {
+    await token.setReleaseAgent(accounts[1], {from: accounts[1]})
+    let agent = await token.releaseAgent.call()
+    assert(agent, "0x0000000000000000000000000000000000000000")
+  })
+
+  it("sets the release agent", async function() {
+    await token.setReleaseAgent(crowdsaleAddy, {from: accounts[0]})
+    let agent = await token.releaseAgent.call()
+    assert.equal(agent, inst.address, "incorrect release agent set")
+  })
+
+  it("must set token owner to crowdsale after setting release agent", async function() {
+    // tansfer owner to crowdsale
+    await token.transferOwnership(inst.address)
+  }) 
 
   it("Crowdsale has correct owner", async function(){
     var owner = await inst.owner.call()
@@ -172,6 +188,23 @@ contract('Crowdsale', function(accounts) {
     a1Balance = await token.balanceOf(accounts[1])
     // assert total = 20000 * 1456
     assert.equal(a1Balance.toNumber(), (20000*1456), "20000 wei presale purchase did not issue correct amount")
+  })
+
+  it("token cannot be transfered before Finalized", async function() {
+    await token.transfer(accounts[0], 20000*1456, {from: accounts[1]})
+    a1Balance = await token.balanceOf(accounts[1])
+    // assert total = 20000 * 1456
+    assert.equal(a1Balance.toNumber(), (20000*1456), "20000 wei presale purchase did not issue correct amount")
+  })
+
+  it("Only release agent can make token transferable", async function() {
+    let released = await token.released.call()
+    assert.equal(released, false)
+
+    // assert even owner cannot release
+    await token.releaseTokenTransfer({from: accounts[0]})
+    released = await token.released.call()
+    assert.equal(released, false)
   })
 
   it("only owner can mint", async function() {
@@ -342,5 +375,21 @@ contract('Crowdsale', function(accounts) {
       // assert that the owner remaining ~40% of tokens were issued in finalization.
       assert(web3.fromWei(bal.toNumber()), 107705112.5)
     })
+  })
+
+  it("token is released for transfer", async function() {
+    let released = await token.released.call()
+    assert(released, true)
+  })
+
+  it("can transfer", async function() {
+    a0Balance = await token.balanceOf(accounts[0])
+    a1Balance = await token.balanceOf(accounts[1])
+    await token.transfer(accounts[0], 20000, {from: accounts[1]})
+    let hold = a1Balance.minus(20000)
+    let add = a0Balance.plus(20000)
+    a1Balance = await token.balanceOf(accounts[1])
+    // assert total = 20000 * 1456
+    assert.equal(a1Balance.toNumber(), hold.toNumber(), "did not transfer correct amount")
   })
 })

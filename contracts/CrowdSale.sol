@@ -111,7 +111,7 @@ contract Crowdsale is Ownable, Haltable {
   }
 
   // default buy function
-  function buy() public payable {
+  function buy() public {
     buyTokens(msg.sender);
   }
   
@@ -175,7 +175,7 @@ contract Crowdsale is Ownable, Haltable {
     if(purchasedAmountOf[msg.sender] == 0) purchaserCount++;
     purchasedAmountOf[msg.sender] = purchasedAmountOf[msg.sender].add(msg.value);
     tokenAmountOf[msg.sender] = tokenAmountOf[msg.sender].add(tokens);
-    
+
     token.mint(beneficiary, tokens);
 
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
@@ -213,6 +213,7 @@ contract Crowdsale is Ownable, Haltable {
     token.mint(wallet, tokens);
     token.finishMinting();
     token.transferOwnership(msg.sender);
+    token.releaseTokenTransfer();
   }
 
   // send ether to the fund collection wallet

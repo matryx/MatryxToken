@@ -223,6 +223,7 @@ contract TestCrowdsale is Ownable, Haltable {
     token.mint(wallet, tokens);
     token.finishMinting();
     token.transferOwnership(msg.sender);
+    token.releaseTokenTransfer();
   }
 
   // send ether to the fund collection wallet
