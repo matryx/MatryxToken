@@ -24,6 +24,10 @@
     "babel-register": "^6.26.0",
     "bignumber.js": "^4.0.3",
     "ethereumjs-testrpc": "^4.1.1",
-    "truffle": "^3.4.9"
+    "truffle": "^3.4.11"
+  },
+  "dependencies": {
+    "ganache-cli": "^6.0.3",
+    "testrpc": "0.0.1"
   }
 }
